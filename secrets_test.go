@@ -9,7 +9,7 @@ import (
 const (
 	secretDir = "test-data"
 	userVal   = "root"
-	passVal   = "password"
+	passVal   = "myPass"
 )
 
 func TestNewDockerSecrets(t *testing.T) {
@@ -33,12 +33,18 @@ func TestDockerSecrets_GetAll(t *testing.T) {
 
 func TestDockerSecrets_Get(t *testing.T) {
 	dockerSecrets, _ := secrets.NewDockerSecrets(secretDir)
-	val, err := dockerSecrets.Get("user")
+	checkKey(t, dockerSecrets, "user", userVal)
+	checkKey(t, dockerSecrets, "pass", passVal)
+}
+
+func checkKey(t *testing.T, dockerSecrets *secrets.DockerSecrets, key, expectedValue string) {
+	value, err := dockerSecrets.Get(key)
 	if err != nil {
-		t.Errorf("dockerSecrets.Get(\"user\"): %v", err)
+		t.Errorf("dockerSecrets.Get(\"%s\"): %s", key, err.Error())
 		return
 	}
-	if val != userVal {
-		t.Errorf("dockerSecrets.Get(\"user\") = `%v`, expected: `%v`", val, userVal)
+	if expectedValue != value {
+		t.Errorf("dockerSecrets.Get(\"%s\") = `%s`, expected: `%s`", key, value, expectedValue)
 	}
+
 }

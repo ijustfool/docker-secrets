@@ -14,11 +14,12 @@ type DockerSecrets struct {
 
 // NewDockerSecrets creates an instance of DockerSecrets
 // The secretsDir argument has a default value of: /run/secrets
+// return os.ErrNotExist if secrets dir not exists
 func NewDockerSecrets(secretsDir string) (*DockerSecrets, error) {
 	if secretsDir == "" {
 		secretsDir = "/run/secrets"
 	}
-	dockerSecrets := &DockerSecrets{secretsDir: secretsDir}
+	dockerSecrets := &DockerSecrets{secretsDir: secretsDir, secrets: map[string]string{}}
 	err := dockerSecrets.readAll()
 	return dockerSecrets, err
 }
@@ -38,7 +39,7 @@ func (ds *DockerSecrets) Get(secretName string) (string, error) {
 
 // Reads all secrets on the specified path in the secretsDir
 func (ds *DockerSecrets) readAll() error {
-	secretsDir := ds.getDir()
+	secretsDir := ds.GetDir()
 	err := isDir(secretsDir)
 	if err != nil {
 		return err
@@ -49,7 +50,6 @@ func (ds *DockerSecrets) readAll() error {
 		return err
 	}
 
-	ds.secrets = make(map[string]string)
 	for _, file := range files {
 		err := ds.read(file.Name())
 		if err != nil {
@@ -61,7 +61,7 @@ func (ds *DockerSecrets) readAll() error {
 
 // Reads a secret from file
 func (ds *DockerSecrets) read(file string) error {
-	buf, err := ioutil.ReadFile(ds.getDir() + "/" + file)
+	buf, err := ioutil.ReadFile(ds.GetDir() + "/" + file)
 	if err != nil {
 		return err
 	}
@@ -70,7 +70,7 @@ func (ds *DockerSecrets) read(file string) error {
 }
 
 // Returns the secretsDir
-func (ds *DockerSecrets) getDir() string {
+func (ds *DockerSecrets) GetDir() string {
 	return ds.secretsDir
 }
 
