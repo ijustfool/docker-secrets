@@ -1,0 +1,4 @@
+{
+  "user": "%docker-secret:test-data/user%",
+  "password": "%docker-secret:test-data/pass%"
+}

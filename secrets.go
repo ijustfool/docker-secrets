@@ -2,10 +2,12 @@ package secrets
 
 import (
 	"fmt"
+	"github.com/mitchellh/mapstructure"
 	"io/ioutil"
 	"os"
-
-	"github.com/mitchellh/mapstructure"
+	"path"
+	"regexp"
+	"strings"
 )
 
 // DockerSecrets contains secrets
@@ -47,6 +49,26 @@ func (ds *DockerSecrets) GetAll() map[string]string {
 // Unmarshal unmarshals the secrets into a Struct
 func (ds *DockerSecrets) Unmarshal(output interface{}) error {
 	return decode(ds.secrets, defaultDecoderConfig(output))
+}
+
+// ReplaceInFile another way to get secrets from a config file
+func ReplaceInFile(b []byte) (result []byte, err error) {
+	var secretContent []byte
+	configContent := string(b)
+	re := regexp.MustCompile(`%docker-secret:([a-zA-Z0-9_\-\/]+)%`)
+	for _, captureGroups := range re.FindAllStringSubmatch(configContent, -1) {
+		dockerSecretSuggestion := captureGroups[0]
+		secretPath := captureGroups[1]
+		filePath := path.Join(secretPath)
+		secretContent, err = ioutil.ReadFile(filePath)
+		if err != nil {
+			return
+		}
+		dockerSecretValue := strings.TrimSpace(string(secretContent))
+		configContent = strings.ReplaceAll(configContent, dockerSecretSuggestion, dockerSecretValue)
+	}
+	result = []byte(configContent)
+	return
 }
 
 // defaultDecoderConfig returns default mapsstructure.DecoderConfig
@@ -99,7 +121,7 @@ func (ds *DockerSecrets) read(file string) error {
 	if err != nil {
 		return err
 	}
-	ds.secrets[file] = string(buf)
+	ds.secrets[file] = strings.TrimSpace(string(buf))
 	return nil
 }
 

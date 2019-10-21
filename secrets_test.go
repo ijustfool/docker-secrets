@@ -1,6 +1,8 @@
 package secrets_test
 
 import (
+	"encoding/json"
+	"io/ioutil"
 	"testing"
 
 	"github.com/ijustfool/docker-secrets"
@@ -50,6 +52,34 @@ func TestDockerSecrets_Unmarshal(t *testing.T) {
 		t.Errorf("dockerSecrets.Unmarshal(): %v", err)
 		return
 	}
+	if testSecrets.User != userVal {
+		t.Errorf("testSecrets.User = `%v`, expected: `%v`", testSecrets.User, userVal)
+	}
+	if testSecrets.Password != passVal {
+		t.Errorf("testSecrets.Password = `%v`, expected: `%v`", testSecrets.Password, passVal)
+	}
+}
+
+func TestReplaceInFile(t *testing.T) {
+	b, err := ioutil.ReadFile(secretDir + "/config.json")
+	if err != nil {
+		t.Errorf("ReplaceInFile(): %v", err)
+		return
+	}
+
+	b, err = secrets.ReplaceInFile(b)
+	if err != nil {
+		t.Errorf("ReplaceInFile(): %v", err)
+		return
+	}
+
+	testSecrets := testSecrets{}
+	err = json.Unmarshal(b, &testSecrets)
+	if err != nil {
+		t.Errorf("ReplaceInFile(): %v", err)
+		return
+	}
+
 	if testSecrets.User != userVal {
 		t.Errorf("testSecrets.User = `%v`, expected: `%v`", testSecrets.User, userVal)
 	}
